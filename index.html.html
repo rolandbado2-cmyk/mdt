@@ -35,7 +35,6 @@
         .unit-tek { background: #000; color: #fff; border: 1px solid #444; }
         .unit-gen { background: #1e40af; color: #fff; }
 
-        /* Razzia Riasztás */
         #raid-alert {
             display: none;
             background: linear-gradient(90deg, #991b1b 0%, #ef4444 50%, #991b1b 100%);
@@ -48,16 +47,15 @@
             100% { background-position: 200% 50%; }
         }
 
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: .5; }
-        }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #0a0f18; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #1e40af; border-radius: 10px; }
     </style>
 </head>
 <body class="min-h-screen flex flex-col">
 
     <!-- RAZZIA RIASZTÁS SÁV -->
-    <div id="raid-alert" class="py-2 text-center text-white font-black text-xs uppercase tracking-[0.3em] shadow-2xl">
+    <div id="raid-alert" class="py-2 text-center text-white font-black text-xs uppercase tracking-[0.3em] shadow-2xl sticky top-0 z-[1000]">
         <i class="fas fa-exclamation-triangle mr-2"></i> 
         AKTUÁLIS RAZZIA FOLYAMATBAN: <span id="raid-alert-loc">---</span> 
         <i class="fas fa-exclamation-triangle ml-2"></i>
@@ -70,7 +68,7 @@
             <span id="header-duty-status" class="text-gray-500 uppercase">Szolgálaton kívül</span>
         </div>
         <div class="flex items-center space-x-6">
-            <div id="auth-display" class="text-gray-400">
+            <div id="auth-display" class="text-gray-400 font-bold">
                 <i class="fas fa-lock mr-1"></i> Nincs azonosítva
             </div>
             <span id="clock" class="font-mono"></span>
@@ -97,6 +95,7 @@
                 <button onclick="showTab('home')" class="px-3 py-2 text-white text-xs font-bold uppercase hover:bg-blue-800 rounded">Főoldal</button>
                 <button onclick="showTab('mdt')" class="px-3 py-2 text-white text-xs font-bold uppercase hover:bg-blue-800 rounded">MDT</button>
                 <button onclick="showTab('wanted')" class="px-3 py-2 text-red-400 text-xs font-bold uppercase hover:bg-blue-800 rounded">Körözés</button>
+                <button onclick="showTab('records')" class="px-3 py-2 text-blue-400 text-xs font-bold uppercase hover:bg-blue-800 rounded">Nyilvántartás</button>
                 <button onclick="showTab('raid')" class="px-3 py-2 text-orange-400 text-xs font-bold uppercase hover:bg-blue-800 rounded">Razzia</button>
                 <button onclick="showTab('users')" class="admin-only px-3 py-2 text-yellow-500 text-xs font-bold uppercase hover:bg-blue-800 rounded">Állomány</button>
                 
@@ -120,7 +119,7 @@
                         <h2 class="text-4xl font-black text-white mb-2 uppercase italic">Üdvözöljük a terminálon</h2>
                         <p class="text-blue-300 text-sm mb-6">Országos Rendőr-főkapitányság digitális ügyviteli rendszere.</p>
                         
-                        <div class="grid grid-cols-3 gap-4">
+                        <div class="grid grid-cols-4 gap-4">
                             <div class="bg-black/50 p-4 rounded border border-white/5">
                                 <div id="stat-users" class="text-2xl font-bold text-white">1</div>
                                 <div class="text-[10px] text-gray-500 uppercase font-bold">Nyilvántartott Tag</div>
@@ -130,13 +129,16 @@
                                 <div class="text-[10px] text-gray-500 uppercase font-bold">Aktív Körözés</div>
                             </div>
                             <div class="bg-black/50 p-4 rounded border border-white/5">
+                                <div id="stat-records" class="text-2xl font-bold text-blue-500">0</div>
+                                <div class="text-[10px] text-gray-500 uppercase font-bold">Bűnügyi Akta</div>
+                            </div>
+                            <div class="bg-black/50 p-4 rounded border border-white/5">
                                 <div id="stat-duty" class="text-2xl font-bold text-green-500">0</div>
                                 <div class="text-[10px] text-gray-500 uppercase font-bold">Szolgálatban</div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- AKTÍV RAZZIA INFÓ A FŐOLDALON -->
                     <div id="active-raid-card" class="hidden bg-orange-900/20 border border-orange-500/50 rounded-xl p-6 mb-8 flex items-center justify-between">
                         <div>
                             <h3 class="text-orange-500 font-black uppercase text-sm italic">FOLYAMATBAN LÉVŐ RAZZIA</h3>
@@ -147,7 +149,7 @@
 
                     <div class="bg-zinc-900/50 border border-zinc-800 rounded-xl p-6">
                         <h3 class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4">Műveleti Napló</h3>
-                        <div id="log" class="font-mono text-[10px] space-y-1 h-48 overflow-y-auto text-gray-400 italic">
+                        <div id="log" class="font-mono text-[10px] space-y-1 h-48 overflow-y-auto text-gray-400 italic custom-scrollbar">
                             <div>[Rendszer] Kapcsolat felépítve...</div>
                         </div>
                     </div>
@@ -158,14 +160,32 @@
                         <i class="fas fa-user-circle text-5xl text-zinc-700 mb-4"></i>
                         <p class="text-gray-500 text-sm uppercase font-bold">Kérjük jelentkezzen be!</p>
                     </div>
-                    
-                    <div class="bg-blue-900/10 border border-blue-900/30 rounded-xl p-6">
-                        <h4 class="text-blue-400 font-bold uppercase text-xs mb-3">Fontos telefonszámok</h4>
-                        <ul class="text-xs space-y-2 text-gray-400">
-                            <li class="flex justify-between"><span>Segélyhívó:</span> <span class="text-white font-bold">112</span></li>
-                            <li class="flex justify-between"><span>Kapitányság:</span> <span class="text-white font-bold">555-ORFK</span></li>
-                        </ul>
-                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- NYILVÁNTARTÁS (Bűnügyi Csatorna) -->
+        <div id="records" class="tab-content p-8">
+            <div class="max-w-6xl mx-auto">
+                <div class="flex justify-between items-center mb-8 border-b border-blue-900/30 pb-4">
+                    <h2 class="text-3xl font-black text-blue-500 uppercase italic">Bűnügyi Nyilvántartás</h2>
+                    <p class="text-gray-500 text-[10px] font-bold uppercase tracking-widest">Véglegesített akták archívuma</p>
+                </div>
+                <div class="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-black text-blue-400 uppercase">
+                            <tr>
+                                <th class="py-4 px-6">Dátum</th>
+                                <th class="py-4 px-6">Személy neve</th>
+                                <th class="py-4 px-6">Bűncselekmény / Indoklás</th>
+                                <th class="py-4 px-6">Intézkedő</th>
+                            </tr>
+                        </thead>
+                        <tbody id="records-list" class="divide-y divide-zinc-800">
+                            <!-- Ide kerülnek automatikusan az adatok -->
+                        </tbody>
+                    </table>
+                    <div id="no-records-msg" class="text-center py-20 text-gray-600 uppercase font-bold italic">Nincs rögzített adat a nyilvántartásban.</div>
                 </div>
             </div>
         </div>
@@ -180,100 +200,69 @@
                         <button id="stopRaidBtn" onclick="endRaid()" class="hidden bg-zinc-700 text-white px-6 py-2 rounded font-bold uppercase text-xs hover:bg-zinc-600">Razzia Lezárása</button>
                     </div>
                 </div>
-
-                <div id="no-raid-msg" class="text-center py-20 bg-zinc-900/30 border border-zinc-800 rounded-2xl">
-                    <i class="fas fa-bullhorn text-5xl text-zinc-800 mb-4"></i>
-                    <p class="text-gray-500 uppercase font-bold text-sm">Jelenleg nincs elrendelt razzia.</p>
-                </div>
-
+                <div id="no-raid-msg" class="text-center py-20 bg-zinc-900/30 border border-zinc-800 rounded-2xl text-gray-500 font-bold uppercase text-sm">Jelenleg nincs elrendelt razzia.</div>
                 <div id="active-raid-display" class="hidden grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div class="bg-zinc-900 p-8 rounded-2xl border-2 border-orange-500 shadow-2xl shadow-orange-900/20">
-                        <div class="flex items-center space-x-3 mb-6">
-                            <div class="w-10 h-10 bg-orange-600 rounded-full flex items-center justify-center animate-pulse">
-                                <i class="fas fa-shield-alt text-white"></i>
-                            </div>
-                            <h3 class="text-white font-black uppercase text-xl italic">Aktív Művelet</h3>
-                        </div>
+                    <div class="bg-zinc-900 p-8 rounded-2xl border-2 border-orange-500 shadow-2xl">
+                        <h3 class="text-white font-black uppercase text-xl italic mb-6">Aktív Művelet</h3>
                         <div class="space-y-4">
-                            <div>
-                                <label class="text-[10px] text-gray-500 uppercase font-bold">Helyszín</label>
-                                <p id="disp-raid-loc" class="text-white font-mono text-lg font-bold">---</p>
-                            </div>
-                            <div>
-                                <label class="text-[10px] text-gray-500 uppercase font-bold">Indoklás / Cél</label>
-                                <p id="disp-raid-reason" class="text-gray-300 text-sm">---</p>
-                            </div>
-                            <div>
-                                <label class="text-[10px] text-gray-500 uppercase font-bold">Rendelt egységek</label>
-                                <p id="disp-raid-units" class="text-blue-400 font-bold text-sm uppercase">---</p>
-                            </div>
+                            <div><label class="text-[10px] text-gray-500 uppercase font-bold">Helyszín</label><p id="disp-raid-loc" class="text-white font-mono text-lg font-bold">---</p></div>
+                            <div><label class="text-[10px] text-gray-500 uppercase font-bold">Indoklás</label><p id="disp-raid-reason" class="text-gray-300 text-sm">---</p></div>
                         </div>
-                    </div>
-                    
-                    <div class="bg-black/40 border border-zinc-800 rounded-2xl p-6">
-                        <h4 class="text-xs font-bold text-gray-500 uppercase mb-4 tracking-widest">Biztonsági Protokoll</h4>
-                        <ul class="text-[11px] text-gray-400 space-y-3">
-                            <li class="flex items-start"><i class="fas fa-check-circle text-orange-500 mr-2 mt-0.5"></i> Minden egység köteles a helyszínre vonulni.</li>
-                            <li class="flex items-start"><i class="fas fa-check-circle text-orange-500 mr-2 mt-0.5"></i> A területet 500 méteres körzetben le kell zárni.</li>
-                            <li class="flex items-start"><i class="fas fa-check-circle text-orange-500 mr-2 mt-0.5"></i> Gyanús személyeknél azonnali motozás engedélyezett.</li>
-                            <li class="flex items-start"><i class="fas fa-check-circle text-orange-500 mr-2 mt-0.5"></i> Szökés kísérlete esetén kényszerítő eszköz alkalmazható.</li>
-                        </ul>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- MDT, WANTED, USERS (marad a korábbi változat) -->
+        <!-- MDT -->
         <div id="mdt" class="tab-content p-8 mdt-dark min-h-[70vh]">
             <div id="mdt-lock" class="max-w-md mx-auto mt-20 text-center bg-zinc-900 p-10 rounded-2xl border border-zinc-800">
                 <i class="fas fa-terminal text-5xl text-zinc-700 mb-4"></i>
                 <h3 class="text-white font-bold uppercase">Azonosítás szükséges</h3>
-                <p class="text-gray-500 text-xs mt-2">A központi adatbázis eléréséhez bejelentkezés szükséges.</p>
             </div>
             <div id="mdt-app" class="hidden max-w-5xl mx-auto">
-                <div class="bg-black border-2 border-blue-900 rounded-xl shadow-2xl overflow-hidden">
+                <div class="bg-black border-2 border-blue-900 rounded-xl overflow-hidden shadow-2xl">
                     <div class="bg-blue-900 px-4 py-2 text-[10px] font-bold flex justify-between">
-                        <span>ORFK MDT v3.0 // <span id="mdt-user">---</span></span>
+                        <span>ORFK MDT v3.1</span>
                         <span id="mdt-status" class="text-red-400 uppercase">Off Duty</span>
                     </div>
                     <div class="p-8">
                         <div class="flex space-x-2 mb-8">
-                            <input type="text" id="mdtSearch" placeholder="Név vagy rendszám..." class="flex-grow bg-zinc-900 border border-zinc-700 p-4 text-white font-mono rounded-l outline-none focus:border-blue-500 uppercase">
-                            <button onclick="searchMDT()" class="bg-blue-700 px-10 rounded-r font-bold hover:bg-blue-600 transition text-white">LEKÉRÉS</button>
+                            <input type="text" id="mdtSearch" placeholder="Név lekérése..." class="flex-grow bg-zinc-900 border border-zinc-700 p-4 text-white font-mono rounded outline-none uppercase">
+                            <button onclick="searchMDT()" class="bg-blue-700 px-10 rounded font-bold text-white hover:bg-blue-600">LEKÉRÉS</button>
                         </div>
-                        <div id="mdtResult" class="bg-zinc-950 p-6 rounded border border-zinc-800 min-h-[300px] font-mono text-sm">
-                            <span class="text-zinc-700 italic">Várakozás adatbevitelre...</span>
-                        </div>
+                        <div id="mdtResult" class="bg-zinc-950 p-6 rounded border border-zinc-800 min-h-[200px] font-mono"></div>
                     </div>
                 </div>
             </div>
         </div>
 
+        <!-- KÖRÖZÉS -->
         <div id="wanted" class="tab-content p-8">
             <div class="max-w-6xl mx-auto">
-                <div class="flex justify-between items-center mb-8 border-b border-red-900/30 pb-4">
-                    <h2 class="text-3xl font-black text-red-600 uppercase italic">Elfogatóparancsok</h2>
-                    <button onclick="openModal('addWantedModal')" class="admin-only bg-red-600 text-white px-6 py-2 rounded font-bold uppercase text-xs hover:bg-red-500">Új kiadása</button>
+                <div class="flex justify-between items-center mb-8">
+                    <h2 class="text-3xl font-black text-red-600 uppercase italic">Körözési Lista</h2>
+                    <button onclick="openModal('addWantedModal')" class="admin-only bg-red-600 text-white px-6 py-2 rounded font-bold uppercase text-xs">Új Körözés</button>
                 </div>
                 <div id="wanted-list" class="grid grid-cols-1 md:grid-cols-3 gap-6"></div>
             </div>
         </div>
 
+        <!-- ÁLLOMÁNYKEZELŐ -->
         <div id="users" class="tab-content p-8">
             <div class="max-w-6xl mx-auto">
-                <h2 class="text-3xl font-black text-yellow-500 uppercase mb-8">Állománykezelő</h2>
+                <h2 class="text-3xl font-black text-yellow-500 uppercase mb-8 italic">Állomány Nyilvántartás</h2>
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     <div class="bg-zinc-900 p-6 rounded-xl border border-zinc-800">
-                        <h3 class="text-white font-bold uppercase mb-4 text-sm">Új tag hozzáadása</h3>
+                        <h3 class="text-white font-bold uppercase mb-4 text-sm">Tag felvétele</h3>
                         <div class="space-y-4">
-                            <input type="text" id="regName" placeholder="Teljes Név" class="w-full bg-black border border-zinc-700 p-3 rounded text-white text-sm outline-none">
-                            <input type="password" id="regPin" placeholder="PIN Kód" class="w-full bg-black border border-zinc-700 p-3 rounded text-white text-sm outline-none">
+                            <input type="text" id="regName" placeholder="Teljes Név" class="w-full bg-black border border-zinc-700 p-3 rounded text-white text-sm outline-none uppercase">
+                            <input type="password" id="regPin" placeholder="Személyes PIN Kód" class="w-full bg-black border border-zinc-700 p-3 rounded text-white text-sm outline-none">
                             <select id="regRank" class="w-full bg-black border border-zinc-700 p-3 rounded text-white text-sm"></select>
                             <select id="regUnit" class="w-full bg-black border border-zinc-700 p-3 rounded text-white text-sm">
                                 <option value="gen">Közrendészet</option>
                                 <option value="tek">TEK</option>
                             </select>
-                            <button onclick="registerUser()" class="w-full bg-yellow-600 py-3 rounded font-black text-black uppercase hover:bg-yellow-500 transition">Rögzítés</button>
+                            <button onclick="registerUser()" class="w-full bg-yellow-600 py-3 rounded font-black text-black uppercase hover:bg-yellow-500">Felvétel</button>
                         </div>
                     </div>
                     <div class="lg:col-span-2 bg-zinc-900 p-6 rounded-xl border border-zinc-800">
@@ -295,31 +284,30 @@
     </main>
 
     <!-- MODALOK -->
-    <!-- LOGIN -->
     <div id="loginModal" class="fixed inset-0 bg-black/95 z-[500] hidden flex items-center justify-center p-4 backdrop-blur-md">
         <div class="bg-zinc-900 w-full max-w-sm border border-blue-900 rounded-2xl p-8 shadow-2xl">
             <div class="text-center mb-8">
-                <i class="fas fa-shield-alt text-5xl text-blue-500 mb-4"></i>
+                <i class="fas fa-id-badge text-5xl text-blue-500 mb-4"></i>
                 <h3 class="text-2xl font-black text-white uppercase italic">Bejelentkezés</h3>
+                <p class="text-gray-500 text-[10px] mt-1 uppercase">ORFK Belső Hálózat</p>
             </div>
             <div class="space-y-4">
-                <input type="text" id="loginUser" placeholder="Felhasználónév" class="w-full bg-black border border-zinc-800 p-4 rounded-xl text-white outline-none">
+                <input type="text" id="loginUser" placeholder="Név (pl. Roland)" class="w-full bg-black border border-zinc-800 p-4 rounded-xl text-white outline-none uppercase">
                 <input type="password" id="loginPin" placeholder="PIN Kód" class="w-full bg-black border border-zinc-800 p-4 rounded-xl text-white outline-none">
-                <button onclick="attemptLogin()" class="w-full bg-blue-600 py-4 rounded-xl font-black text-white uppercase hover:bg-blue-500 shadow-lg">Azonosítás</button>
+                <button onclick="attemptLogin()" class="w-full bg-blue-600 py-4 rounded-xl font-black text-white uppercase hover:bg-blue-500">Azonosítás</button>
                 <button onclick="closeModal('loginModal')" class="w-full text-zinc-600 text-[10px] uppercase font-bold hover:text-white mt-2">Mégse</button>
             </div>
         </div>
     </div>
 
-    <!-- ADD WANTED -->
+    <!-- ADD WANTED MODAL -->
     <div id="addWantedModal" class="fixed inset-0 bg-black/90 z-[500] hidden flex items-center justify-center p-4">
         <div class="bg-zinc-900 w-full max-w-md border border-red-600 rounded-xl p-8 shadow-2xl">
             <h3 class="text-xl font-black text-red-600 mb-6 uppercase italic">Új Elfogatóparancs</h3>
             <div class="space-y-4">
-                <input type="text" id="wName" placeholder="Személy neve" class="w-full bg-black border border-zinc-800 p-3 rounded text-white">
-                <textarea id="wReason" placeholder="Indoklás" class="w-full bg-black border border-zinc-800 p-3 rounded text-white h-24"></textarea>
-                <input type="text" id="wReward" placeholder="Vérdíj ($)" class="w-full bg-black border border-zinc-800 p-3 rounded text-white">
-                <button onclick="addWanted()" class="w-full bg-red-600 py-3 rounded font-bold text-white uppercase">Parancs Kiadása</button>
+                <input type="text" id="wName" placeholder="Személy neve" class="w-full bg-black border border-zinc-800 p-3 rounded text-white uppercase">
+                <textarea id="wReason" placeholder="Bűncselekmény" class="w-full bg-black border border-zinc-800 p-3 rounded text-white h-24"></textarea>
+                <button onclick="addWanted()" class="w-full bg-red-600 py-3 rounded font-bold text-white uppercase">Kiadás</button>
                 <button onclick="closeModal('addWantedModal')" class="w-full text-gray-500 text-xs uppercase mt-2">Bezárás</button>
             </div>
         </div>
@@ -327,28 +315,16 @@
 
     <!-- RAZZIA MODAL -->
     <div id="raidModal" class="fixed inset-0 bg-black/90 z-[500] hidden flex items-center justify-center p-4">
-        <div class="bg-zinc-900 w-full max-w-md border border-orange-600 rounded-xl p-8 shadow-2xl">
+        <div class="bg-zinc-900 w-full max-w-md border border-orange-600 rounded-xl p-8">
             <h3 class="text-xl font-black text-orange-500 mb-6 uppercase italic">Razzia Indítása</h3>
             <div class="space-y-4">
-                <input type="text" id="raidLoc" placeholder="Helyszín (pl. Strawberry)" class="w-full bg-black border border-zinc-800 p-3 rounded text-white outline-none focus:border-orange-500">
-                <textarea id="raidReason" placeholder="Razzia célja / indoka" class="w-full bg-black border border-zinc-800 p-3 rounded text-white h-24 outline-none focus:border-orange-500"></textarea>
-                <div class="grid grid-cols-2 gap-2">
-                    <label class="bg-black border border-zinc-800 p-3 rounded flex items-center text-xs text-gray-400">
-                        <input type="checkbox" id="unitGen" class="mr-2" checked> Közrend
-                    </label>
-                    <label class="bg-black border border-zinc-800 p-3 rounded flex items-center text-xs text-gray-400">
-                        <input type="checkbox" id="unitTek" class="mr-2"> TEK
-                    </label>
-                </div>
-                <button onclick="startRaid()" class="w-full bg-orange-600 py-3 rounded font-bold text-white uppercase hover:bg-orange-500">Művelet Megkezdése</button>
-                <button onclick="closeModal('raidModal')" class="w-full text-gray-500 text-xs uppercase mt-2">Bezárás</button>
+                <input type="text" id="raidLoc" placeholder="Helyszín" class="w-full bg-black border border-zinc-800 p-3 rounded text-white uppercase outline-none">
+                <textarea id="raidReason" placeholder="Cél / Indok" class="w-full bg-black border border-zinc-800 p-3 rounded text-white h-24"></textarea>
+                <button onclick="startRaid()" class="w-full bg-orange-600 py-3 rounded font-bold text-white uppercase">Indítás</button>
+                <button onclick="closeModal('raidModal')" class="w-full text-gray-500 text-xs uppercase mt-2">Mégse</button>
             </div>
         </div>
     </div>
-
-    <footer class="bg-black py-4 border-t border-blue-900/20 text-center text-[9px] text-gray-600 uppercase tracking-widest font-bold">
-        ORFK DIGITÁLIS KÖZPONT - BIZALMAS ADATOK - 2026
-    </footer>
 
     <script>
         const Ranks = ["Törzsőrmester", "Zászlós", "Törzszászlós", "Hadnagy", "Főhadnagy", "Százados", "Őrnagy", "Alezredes", "Ezredes", "Altábornagy"];
@@ -356,41 +332,41 @@
         let currentUser = null;
         let onDuty = false;
         let wantedList = [];
-        let activeRaid = null; // Razzia állapota
+        let archivedRecords = []; // Végleges nyilvántartás
+        let activeRaid = null;
 
         function updateClock() { document.getElementById('clock').innerText = new Date().toLocaleString('hu-HU'); }
         setInterval(updateClock, 1000);
-        updateClock();
 
         function loadRanks() {
             const select = document.getElementById('regRank');
-            select.innerHTML = '';
             Ranks.forEach(r => select.innerHTML += `<option value="${r}">${r}</option>`);
         }
         loadRanks();
 
-        function showTab(tabId) {
+        function showTab(id) {
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-            document.getElementById(tabId).classList.add('active');
-            if(tabId === 'users') renderUserTable();
-            if(tabId === 'wanted') renderWantedList();
-            if(tabId === 'raid') renderRaidView();
+            document.getElementById(id).classList.add('active');
+            if(id === 'users') renderUserTable();
+            if(id === 'wanted') renderWantedList();
+            if(id === 'raid') renderRaidView();
+            if(id === 'records') renderRecords();
         }
 
         function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
         function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
 
         function attemptLogin() {
-            const nameVal = document.getElementById('loginUser').value.trim();
-            const pinVal = document.getElementById('loginPin').value.trim();
-            const foundUser = users.find(u => u.name.toLowerCase() === nameVal.toLowerCase() && u.pin === pinVal);
+            const nameInput = document.getElementById('loginUser').value.trim().toUpperCase();
+            const pinInput = document.getElementById('loginPin').value.trim();
+            const foundUser = users.find(u => u.name.toUpperCase() === nameInput && u.pin === pinInput);
             if (foundUser) loginSuccess(foundUser);
-            else alert("HIBA: Helytelen név vagy PIN kód!");
+            else alert("HIBA: Hibás név vagy PIN kód!");
         }
 
         function loginSuccess(user) {
             currentUser = user;
-            user.admin ? document.body.classList.add('is-admin') : document.body.classList.remove('is-admin');
+            if(user.admin) document.body.classList.add('is-admin');
             document.getElementById('loginBtn').classList.add('hidden');
             document.getElementById('logoutBtn').classList.remove('hidden');
             document.getElementById('duty-section').classList.remove('hidden');
@@ -398,15 +374,12 @@
             document.getElementById('auth-display').innerHTML = `<i class="fas fa-user-check text-green-500 mr-1"></i> ${user.name}`;
             document.getElementById('mdt-lock').classList.add('hidden');
             document.getElementById('mdt-app').classList.remove('hidden');
-            document.getElementById('mdt-user').innerText = `${user.name} [${user.rank}]`;
-            
             document.getElementById('profile-card').innerHTML = `
                 <div class="w-16 h-16 bg-blue-600 rounded-full mx-auto mb-4 flex items-center justify-center text-white font-bold text-2xl">${user.name[0]}</div>
                 <h4 class="text-white font-bold uppercase">${user.name}</h4>
                 <p class="text-blue-400 text-[10px] font-bold uppercase">${user.rank}</p>
-                <div class="mt-4 pt-4 border-t border-zinc-800"><span class="unit-badge unit-${user.unit}">${user.unit === 'tek' ? 'TEK' : 'Közrend'}</span></div>
             `;
-            logAction(`Bejelentkezés: ${user.name}`);
+            logAction(`Sikeres bejelentkezés: ${user.name}`);
             closeModal('loginModal');
             showTab('home');
         }
@@ -414,113 +387,45 @@
         function logout() { location.reload(); }
 
         function toggleDuty() {
+            if (!currentUser) return;
             onDuty = !onDuty;
             const btn = document.getElementById('dutyBtn');
             const header = document.getElementById('header-duty-status');
-            const mdtTag = document.getElementById('mdt-status');
             if(onDuty) {
-                btn.innerText = "Szolgálat leadása"; btn.className = "bg-red-800 text-white text-[10px] font-bold px-4 py-2 rounded uppercase";
+                btn.innerText = "Leadás"; btn.className = "bg-red-800 text-white text-[10px] font-bold px-4 py-2 rounded uppercase";
                 header.innerText = "SZOLGÁLATBAN"; header.className = "text-green-500 font-bold uppercase";
-                mdtTag.innerText = "On Duty"; mdtTag.className = "text-green-400 uppercase";
-                logAction(`${currentUser.name} szolgálatba lépett.`);
+                logAction(`SZOLGÁLATBA LÉPETT: ${currentUser.name}`);
             } else {
-                btn.innerText = "Szolgálatba lépés"; btn.className = "bg-zinc-800 text-white text-[10px] font-bold px-4 py-2 rounded uppercase";
+                btn.innerText = "Szolgálat"; btn.className = "bg-zinc-800 text-white text-[10px] font-bold px-4 py-2 rounded uppercase";
                 header.innerText = "SZOLGÁLATON KÍVÜL"; header.className = "text-gray-500 uppercase";
-                mdtTag.innerText = "Off Duty"; mdtTag.className = "text-red-400 uppercase";
-                logAction(`${currentUser.name} kilépett.`);
+                logAction(`SZOLGÁLATOT LEADTA: ${currentUser.name}`);
             }
             document.getElementById('stat-duty').innerText = onDuty ? "1" : "0";
+            document.getElementById('mdt-status').innerText = onDuty ? "On Duty" : "Off Duty";
+            document.getElementById('mdt-status').className = onDuty ? "text-green-400 uppercase" : "text-red-400 uppercase";
         }
 
-        // --- RAZZIA FUNKCIÓK ---
-        function startRaid() {
-            const loc = document.getElementById('raidLoc').value;
-            const reason = document.getElementById('raidReason').value;
-            const units = [];
-            if(document.getElementById('unitGen').checked) units.push("Közrend");
-            if(document.getElementById('unitTek').checked) units.push("TEK");
-
-            if(!loc || !reason) { alert("Helyszín és indok kötelező!"); return; }
-
-            activeRaid = { location: loc, reason: reason, units: units.join(", ") };
-            
-            // UI Frissítés
-            document.getElementById('raid-alert').style.display = 'block';
-            document.getElementById('raid-alert-loc').innerText = loc.toUpperCase();
-            
-            closeModal('raidModal');
-            renderRaidView();
-            updateHomeRaidCard();
-            logAction(`RAZZIA ELRENDELVE: ${loc}`);
-        }
-
-        function endRaid() {
-            if(confirm("Biztosan lezárja a razziát?")) {
-                activeRaid = null;
-                document.getElementById('raid-alert').style.display = 'none';
-                renderRaidView();
-                updateHomeRaidCard();
-                logAction(`Razzia befejezve.`);
-            }
-        }
-
-        function renderRaidView() {
-            const noRaid = document.getElementById('no-raid-msg');
-            const activeRaidDisp = document.getElementById('active-raid-display');
-            const startBtn = document.getElementById('startRaidBtn');
-            const stopBtn = document.getElementById('stopRaidBtn');
-
-            if(activeRaid) {
-                noRaid.classList.add('hidden');
-                activeRaidDisp.classList.remove('hidden');
-                document.getElementById('disp-raid-loc').innerText = activeRaid.location;
-                document.getElementById('disp-raid-reason').innerText = activeRaid.reason;
-                document.getElementById('disp-raid-units').innerText = activeRaid.units;
-                
-                if(currentUser) {
-                    startBtn.classList.add('hidden');
-                    stopBtn.classList.remove('hidden');
-                }
-            } else {
-                noRaid.classList.remove('hidden');
-                activeRaidDisp.classList.add('hidden');
-                startBtn.classList.remove('hidden');
-                stopBtn.classList.add('hidden');
-            }
-        }
-
-        function updateHomeRaidCard() {
-            const card = document.getElementById('active-raid-card');
-            if(activeRaid) {
-                card.classList.remove('hidden');
-                document.getElementById('home-raid-desc').innerText = `Helyszín: ${activeRaid.location} | Egységek: ${activeRaid.units}`;
-            } else {
-                card.classList.add('hidden');
-            }
-        }
-
-        // --- EGYÉB MARADÉK ---
         function registerUser() {
-            const name = document.getElementById('regName').value.trim();
+            const name = document.getElementById('regName').value.trim().toUpperCase();
             const pin = document.getElementById('regPin').value.trim();
             const rank = document.getElementById('regRank').value;
             const unit = document.getElementById('regUnit').value;
-            if(!name || !pin) return;
-            users.push({ name: name.toUpperCase(), pin, rank, unit, admin: false });
-            document.getElementById('regName').value = ''; document.getElementById('regPin').value = '';
+            if(!name || !pin) { alert("Név és PIN kötelező!"); return; }
+            users.push({ name: name, pin: pin, rank: rank, unit: unit, admin: false });
             renderUserTable(); updateStats();
-            logAction(`Új tag: ${name}`);
+            logAction(`Állományba véve: ${name}`);
+            document.getElementById('regName').value = ''; document.getElementById('regPin').value = '';
         }
 
         function renderUserTable() {
             const body = document.getElementById('userTable');
             body.innerHTML = '';
-            users.forEach((u, index) => {
+            users.forEach((u, i) => {
                 body.innerHTML += `<tr class="border-b border-zinc-800">
                     <td class="py-3 px-2 font-bold text-white">${u.name}</td>
                     <td class="py-3 px-2 text-blue-400 font-bold uppercase text-[10px]">${u.rank}</td>
                     <td class="py-3 px-2"><span class="unit-badge unit-${u.unit}">${u.unit === 'tek' ? 'TEK' : 'Közrend'}</span></td>
-                    <td class="py-3 px-2 text-right">${u.admin ? '<i class="fas fa-crown text-yellow-500"></i>' : `<button onclick="removeUser(${index})" class="text-red-500"><i class="fas fa-trash-alt"></i></button>`}</td>
+                    <td class="py-3 px-2 text-right">${u.admin ? '<i class="fas fa-crown text-yellow-500"></i>' : `<button onclick="removeUser(${i})" class="text-red-500"><i class="fas fa-trash"></i></button>`}</td>
                 </tr>`;
             });
         }
@@ -528,51 +433,109 @@
         function removeUser(i) { users.splice(i, 1); renderUserTable(); updateStats(); }
 
         function addWanted() {
-            const name = document.getElementById('wName').value;
+            const name = document.getElementById('wName').value.toUpperCase();
             const reason = document.getElementById('wReason').value;
-            const reward = document.getElementById('wReward').value;
             if(!name) return;
-            wantedList.push({ name, reason, reward, date: new Date().toLocaleDateString('hu-HU') });
-            closeModal('addWantedModal'); renderWantedList(); updateStats();
-            logAction(`Körözés: ${name}`);
+            const date = new Date().toLocaleDateString('hu-HU') + " " + new Date().toLocaleTimeString('hu-HU', {hour:'2-digit', minute:'2-digit'});
+            const newWanted = { name, reason, date, officer: currentUser ? currentUser.name : "Rendszer" };
+            
+            // Hozzáadás az aktív körözéshez
+            wantedList.push(newWanted);
+            
+            // AUTOMATIKUS RÖGZÍTÉS A NYILVÁNTARTÁSBA (Bűnügyi csatorna)
+            archivedRecords.unshift(newWanted);
+            
+            logAction(`KÖRÖZÉS KIADVA: ${name}`);
+            closeModal('addWantedModal'); 
+            renderWantedList(); 
+            updateStats();
         }
 
         function renderWantedList() {
             const list = document.getElementById('wanted-list');
-            list.innerHTML = wantedList.length ? '' : '<div class="col-span-full text-center py-10 text-gray-600">Nincs aktív körözés.</div>';
+            list.innerHTML = '';
             wantedList.forEach((w, i) => {
-                list.innerHTML += `<div class="bg-zinc-900 border border-red-900/50 rounded-xl p-6">
-                    <h4 class="text-white font-black uppercase">${w.name}</h4>
-                    <p class="text-red-500 text-[10px] mb-4">${w.date}</p>
-                    <div class="bg-black/50 p-3 rounded text-[11px] mb-4 italic">${w.reason}</div>
-                    <div class="text-green-500 font-bold text-sm">$${w.reward}</div>
-                    ${currentUser?.admin ? `<button onclick="removeWanted(${i})" class="w-full mt-4 text-red-500 text-[10px] uppercase">Visszavonás</button>` : ''}
+                list.innerHTML += `<div class="bg-zinc-900 border border-red-900 p-6 rounded-xl relative overflow-hidden">
+                    <div class="absolute top-0 right-0 bg-red-600 text-white text-[8px] px-2 py-1 font-bold uppercase">AKTÍV</div>
+                    <h4 class="text-white font-black">${w.name}</h4>
+                    <p class="text-gray-500 text-[10px] mb-2 uppercase italic">${w.reason}</p>
+                    <div class="flex justify-between items-center mt-4">
+                        <span class="text-[9px] text-zinc-600 font-mono">${w.date}</span>
+                        <button onclick="removeWanted(${i})" class="admin-only text-red-500 text-[9px] uppercase font-bold hover:underline">Elfogva / Törlés</button>
+                    </div>
                 </div>`;
             });
         }
 
-        function removeWanted(i) { wantedList.splice(i, 1); renderWantedList(); updateStats(); }
-
-        function searchMDT() {
-            const query = document.getElementById('mdtSearch').value.toUpperCase();
-            const res = document.getElementById('mdtResult');
-            if(!query) return;
-            res.innerHTML = '<span class="text-blue-500 animate-pulse">Lekérés...</span>';
-            setTimeout(() => {
-                const wanted = wantedList.find(w => w.name.toUpperCase().includes(query));
-                res.innerHTML = wanted ? `<div class="border-2 border-red-600 p-4 rounded bg-red-900/10"><h2 class="text-red-600 font-black animate-pulse">KÖRÖZÖTT SZEMÉLY!</h2><p class="text-white">${wanted.name}</p></div>` : '<p class="text-green-500">TISZTA</p>';
-            }, 800);
+        function renderRecords() {
+            const list = document.getElementById('records-list');
+            const msg = document.getElementById('no-records-msg');
+            list.innerHTML = '';
+            if(archivedRecords.length === 0) msg.classList.remove('hidden');
+            else {
+                msg.classList.add('hidden');
+                archivedRecords.forEach(r => {
+                    list.innerHTML += `
+                        <tr class="hover:bg-blue-900/10 transition-colors">
+                            <td class="py-4 px-6 text-zinc-500 font-mono">${r.date}</td>
+                            <td class="py-4 px-6 text-white font-bold uppercase">${r.name}</td>
+                            <td class="py-4 px-6 text-gray-400 italic">${r.reason}</td>
+                            <td class="py-4 px-6 text-blue-400 font-bold uppercase text-[10px]">${r.officer}</td>
+                        </tr>
+                    `;
+                });
+            }
         }
 
-        function logAction(msg) {
+        function removeWanted(i) { 
+            const name = wantedList[i].name;
+            wantedList.splice(i, 1); 
+            logAction(`KÖRÖZÉS TÖRÖLVE (Elfogva): ${name}`);
+            renderWantedList(); 
+            updateStats(); 
+        }
+
+        function searchMDT() {
+            const q = document.getElementById('mdtSearch').value.toUpperCase();
+            const res = document.getElementById('mdtResult');
+            if(!q) return;
+            logAction(`MDT LEKÉRDEZÉS: ${q}`);
+            const found = wantedList.find(w => w.name.includes(q));
+            res.innerHTML = found ? `<div class="p-4 bg-red-900/20 border border-red-600 rounded"><h3 class="text-red-500 font-black">KÖRÖZÖTT!</h3><p class="text-white">${found.name}</p><p class="text-xs text-gray-400 mt-2">${found.reason}</p></div>` : '<p class="text-green-500 font-bold italic">> EGYSÉG JELENTI: A SZEMÉLY TISZTA.</p>';
+        }
+
+        function logAction(m) {
             const log = document.getElementById('log');
-            log.innerHTML = `<div>[${new Date().toLocaleTimeString('hu-HU')}] ${msg}</div>` + log.innerHTML;
+            const time = new Date().toLocaleTimeString('hu-HU', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            log.innerHTML = `<div class="border-l-2 border-blue-800 pl-2 mb-1"><span class="text-blue-500">[${time}]</span> ${m}</div>` + log.innerHTML;
         }
 
         function updateStats() {
             document.getElementById('stat-users').innerText = users.length;
             document.getElementById('stat-wanted').innerText = wantedList.length;
+            document.getElementById('stat-records').innerText = archivedRecords.length;
         }
+
+        // Razzia funkciók maradnak változatlanul
+        function startRaid() {
+            const loc = document.getElementById('raidLoc').value.toUpperCase();
+            const reason = document.getElementById('raidReason').value;
+            if(!loc) return;
+            activeRaid = { location: loc, reason: reason };
+            document.getElementById('raid-alert').style.display = 'block';
+            document.getElementById('raid-alert-loc').innerText = loc;
+            logAction(`RAZZIA ELRENDELVE: ${loc}`);
+            closeModal('raidModal'); showTab('raid'); updateHomeRaidCard();
+        }
+        function endRaid() { if(activeRaid) logAction(`RAZZIA LEZÁRVA: ${activeRaid.location}`); activeRaid = null; document.getElementById('raid-alert').style.display = 'none'; showTab('raid'); updateHomeRaidCard(); }
+        function renderRaidView() {
+            const no = document.getElementById('no-raid-msg'); const active = document.getElementById('active-raid-display'); const stop = document.getElementById('stopRaidBtn');
+            if(activeRaid) { no.classList.add('hidden'); active.classList.remove('hidden'); stop.classList.remove('hidden'); document.getElementById('disp-raid-loc').innerText = activeRaid.location; document.getElementById('disp-raid-reason').innerText = activeRaid.reason; }
+            else { no.classList.remove('hidden'); active.classList.add('hidden'); stop.classList.add('hidden'); }
+        }
+        function updateHomeRaidCard() { const card = document.getElementById('active-raid-card'); if(activeRaid) { card.classList.remove('hidden'); document.getElementById('home-raid-desc').innerText = `Helyszín: ${activeRaid.location}`; } else card.classList.add('hidden'); }
+
+        updateClock(); updateStats();
     </script>
 </body>
 </html>
